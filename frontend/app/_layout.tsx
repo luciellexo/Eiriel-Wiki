@@ -1,12 +1,14 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
-import { theme } from '../constants/theme';
+import { useTheme } from '../constants/theme';
 
 export default function RootLayout() {
+  const theme = useTheme();
+  
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
-      <StatusBar style="dark" />
+      <StatusBar style={theme.background === '#121212' ? 'light' : 'dark'} />
       <Stack screenOptions={{ 
         headerShown: false, 
         contentStyle: { backgroundColor: theme.background },
