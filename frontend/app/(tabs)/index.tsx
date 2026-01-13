@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, TextInput, Alert, ScrollView } from 'react-native';
 import { useDoseStore } from '../../store/useDoseStore';
 import { getActiveLogs } from '../../utils/substanceUtils';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -7,11 +7,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
-  const { logs, removeLog } = useDoseStore();
+  const { logs, removeLog, updateLog } = useDoseStore();
   const [activeLogs, setActiveLogs] = useState<any[]>([]);
   const [historyLogs, setHistoryLogs] = useState<any[]>([]);
   const [now, setNow] = useState(Date.now());
   const router = useRouter();
+
+  // Edit Modal State
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingLog, setEditingLog] = useState<any>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editNotes, setEditNotes] = useState('');
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -23,8 +29,26 @@ export default function HomeScreen() {
   useEffect(() => {
     const active = getActiveLogs(logs, {});
     setActiveLogs(active);
-    setHistoryLogs(logs.filter(l => !active.includes(l)));
+    setHistoryLogs(logs.filter(l => !active.includes(l)).sort((a, b) => b.timestamp - a.timestamp));
   }, [logs, now]);
+
+  const handleEdit = (log: any) => {
+    setEditingLog(log);
+    setEditAmount(String(log.amount));
+    setEditNotes(log.notes || '');
+    setEditModalVisible(true);
+  };
+
+  const saveEdit = () => {
+    if (editingLog) {
+      updateLog(editingLog.id, {
+        amount: parseFloat(editAmount) || editingLog.amount,
+        notes: editNotes
+      });
+      setEditModalVisible(false);
+      setEditingLog(null);
+    }
+  };
 
   const renderActiveItem = ({ item }: { item: any }) => {
     const startTime = item.timestamp;
@@ -34,10 +58,15 @@ export default function HomeScreen() {
     const progress = Math.max(0, Math.min(100, (1 - timeLeft / duration) * 100));
 
     return (
-      <View style={styles.activeCard}>
+      <TouchableOpacity style={styles.activeCard} onPress={() => handleEdit(item)}>
         <View style={styles.cardHeader}>
           <Text style={styles.substanceName}>{item.substanceName}</Text>
-          <TouchableOpacity onPress={() => removeLog(item.id)}>
+          <TouchableOpacity onPress={() => {
+              Alert.alert('Delete Log', 'Are you sure?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: () => removeLog(item.id) }
+              ]);
+          }}>
              <Ionicons name="trash-outline" size={20} color="#666" />
           </TouchableOpacity>
         </View>
@@ -51,17 +80,24 @@ export default function HomeScreen() {
               <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
            </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   const renderHistoryItem = ({ item }: { item: any }) => (
-    <View style={styles.historyItem}>
+    <TouchableOpacity style={styles.historyItem} onPress={() => handleEdit(item)}>
        <View>
          <Text style={styles.historyName}>{item.substanceName}</Text>
-         <Text style={styles.historyDetail}>{item.amount} {item.unit} • {format(item.timestamp, 'MMM d, h:mm a')}</Text>
+         <Text style={styles.historyDetail}>
+             {item.amount} {item.unit} • {format(item.timestamp, 'MMM d, h:mm a')}
+         </Text>
+         {item.notes ? <Text style={styles.historyNotes} numberOfLines={1}>{item.notes}</Text> : null}
        </View>
-    </View>
+       <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={styles.timeAgo}>{formatDistanceToNow(item.timestamp, { addSuffix: true })}</Text>
+          <Ionicons name="chevron-forward" size={16} color="#444" style={{marginLeft: 8}} />
+       </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -88,8 +124,62 @@ export default function HomeScreen() {
           renderItem={renderHistoryItem}
           keyExtractor={item => item.id}
           contentContainerStyle={{ paddingBottom: 20 }}
+          ListEmptyComponent={<Text style={styles.emptyText}>No history yet.</Text>}
         />
       </View>
+
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Edit Log</Text>
+                
+                <Text style={styles.label}>Amount</Text>
+                <TextInput 
+                    style={styles.input} 
+                    value={editAmount} 
+                    onChangeText={setEditAmount}
+                    keyboardType="numeric"
+                />
+
+                <Text style={styles.label}>Notes</Text>
+                <TextInput 
+                    style={[styles.input, styles.textArea]} 
+                    value={editNotes} 
+                    onChangeText={setEditNotes}
+                    multiline
+                />
+
+                <View style={styles.modalButtons}>
+                    <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setEditModalVisible(false)}>
+                        <Text style={styles.buttonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={saveEdit}>
+                        <Text style={styles.buttonText}>Save</Text>
+                    </TouchableOpacity>
+                </View>
+                
+                <TouchableOpacity 
+                    style={styles.deleteButton} 
+                    onPress={() => {
+                        Alert.alert('Delete', 'Are you sure?', [
+                            { text: 'Cancel' },
+                            { text: 'Delete', style: 'destructive', onPress: () => {
+                                removeLog(editingLog.id);
+                                setEditModalVisible(false);
+                            }}
+                        ]);
+                    }}
+                >
+                    <Text style={styles.deleteText}>Delete Entry</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -121,8 +211,25 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 8,
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   historyName: { color: '#fff', fontSize: 16, fontWeight: '500' },
-  historyDetail: { color: '#888', fontSize: 12, marginTop: 4 }
+  historyDetail: { color: '#888', fontSize: 12, marginTop: 4 },
+  historyNotes: { color: '#666', fontSize: 12, marginTop: 2, fontStyle: 'italic' },
+  timeAgo: { color: '#555', fontSize: 12 },
+  
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: '#1E1E1E', borderRadius: 12, padding: 20 },
+  modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  label: { color: '#888', marginBottom: 8 },
+  input: { backgroundColor: '#2C2C2C', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 16 },
+  textArea: { height: 80, textAlignVertical: 'top' },
+  modalButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
+  modalButton: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+  cancelButton: { backgroundColor: '#333' },
+  saveButton: { backgroundColor: '#03DAC6' },
+  buttonText: { color: '#fff', fontWeight: 'bold' },
+  deleteButton: { marginTop: 20, alignItems: 'center' },
+  deleteText: { color: '#CF6679' }
 });
