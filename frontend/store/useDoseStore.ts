@@ -3,16 +3,23 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DoseLog } from '../types';
 import uuid from 'react-native-uuid';
+import { ThemeColors, lightTheme } from '../constants/theme';
+
+export type ThemeMode = 'light' | 'dark' | 'custom';
 
 interface DoseState {
   logs: DoseLog[];
-  favorites: string[]; // list of substance names
+  favorites: string[]; 
+  themeMode: ThemeMode;
+  customTheme: Partial<ThemeColors>;
   addLog: (log: Omit<DoseLog, 'id'>) => void;
   removeLog: (id: string) => void;
   updateLog: (id: string, updates: Partial<DoseLog>) => void;
   clearLogs: () => void;
   toggleFavorite: (name: string) => void;
   isFavorite: (name: string) => boolean;
+  setThemeMode: (mode: ThemeMode) => void;
+  updateCustomTheme: (colors: Partial<ThemeColors>) => void;
 }
 
 export const useDoseStore = create<DoseState>()(
@@ -20,6 +27,8 @@ export const useDoseStore = create<DoseState>()(
     (set, get) => ({
       logs: [],
       favorites: [],
+      themeMode: 'light',
+      customTheme: {},
       addLog: (log) => set((state) => ({
         logs: [{ ...log, id: uuid.v4() as string }, ...state.logs]
       })),
@@ -39,6 +48,10 @@ export const useDoseStore = create<DoseState>()(
         };
       }),
       isFavorite: (name) => get().favorites.includes(name),
+      setThemeMode: (mode) => set({ themeMode: mode }),
+      updateCustomTheme: (colors) => set((state) => ({
+        customTheme: { ...state.customTheme, ...colors }
+      })),
     }),
     {
       name: 'dose-storage',
