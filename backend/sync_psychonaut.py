@@ -14,7 +14,8 @@ client = MongoClient(MONGO_URL)
 db = client.get_database("app_db")
 collection = db.get_collection("substances")
 
-# Full query
+# Full query with pagination handling via limit
+# PsychonautWiki might have a hard limit, but let's try requesting max
 query = """
 {
     substances(limit: 5000) {
@@ -80,11 +81,7 @@ def sync_substances():
         substances = data.get('data', {}).get('substances', [])
         print(f"Found {len(substances)} substances. Updating database...")
 
-        operations = []
         for sub in substances:
-            # Clean up interaction lists to simple strings if needed, or keep object structure
-            # The API returns {name: "Lithium"}, we might just want "Lithium"
-            
             # Flatten interactions for easier querying
             interactions = []
             if sub.get('dangerousInteractions'):
