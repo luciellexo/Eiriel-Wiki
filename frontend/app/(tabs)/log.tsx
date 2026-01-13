@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Modal, FlatList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useDoseStore } from '../../store/useDoseStore';
 import { api } from '../../services/api';
 import { Substance, SubstanceRoa } from '../../types';
 import { Ionicons } from '@expo/vector-icons';
 import { getActiveLogs, getDurationTotalMinutes } from '../../utils/substanceUtils';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function LogDoseScreen() {
   const router = useRouter();
@@ -19,6 +20,11 @@ export default function LogDoseScreen() {
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Time Selection
+  const [timestamp, setTimestamp] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   
   // Interaction Warning State
   const [interactionWarning, setInteractionWarning] = useState<{name: string, status: string} | null>(null);
@@ -91,7 +97,7 @@ export default function LogDoseScreen() {
       amount: amt,
       unit: selectedRoa.dose?.units || 'mg',
       roa: selectedRoa.name,
-      timestamp: Date.now(),
+      timestamp: timestamp.getTime(),
       notes: notes,
       estimatedDurationMinutes: duration,
       substanceSnapshot: {
@@ -105,9 +111,29 @@ export default function LogDoseScreen() {
     setAmount('');
     setNotes('');
     setQuery('');
+    setTimestamp(new Date());
     setInteractionWarning(null);
     
     router.replace('/(tabs)');
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      // Keep time, change date
+      const newDate = new Date(selectedDate);
+      newDate.setHours(timestamp.getHours());
+      newDate.setMinutes(timestamp.getMinutes());
+      setTimestamp(newDate);
+      setShowTimePicker(true); // Automatically show time picker after date
+    }
+  };
+
+  const onTimeChange = (event: any, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) {
+      setTimestamp(selectedDate);
+    }
   };
 
   return (
@@ -155,6 +181,41 @@ export default function LogDoseScreen() {
 
       {selectedSubstance && selectedRoa && (
         <>
+          <Text style={styles.label}>Time of Dose</Text>
+          <View style={styles.timeContainer}>
+            <TouchableOpacity style={styles.timeButton} onPress={() => setShowDatePicker(true)}>
+              <Ionicons name="calendar-outline" size={20} color="#fff" />
+              <Text style={styles.timeButtonText}>
+                 {timestamp.toLocaleDateString()}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.timeButton} onPress={() => setShowTimePicker(true)}>
+              <Ionicons name="time-outline" size={20} color="#fff" />
+              <Text style={styles.timeButtonText}>
+                 {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={timestamp}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={onDateChange}
+              maximumDate={new Date()}
+            />
+          )}
+
+          {showTimePicker && (
+            <DateTimePicker
+              value={timestamp}
+              mode="time"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={onTimeChange}
+            />
+          )}
+
           <Text style={styles.label}>Route of Administration</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.roaScroll}>
             {selectedSubstance.roas.map((roa) => (
@@ -254,7 +315,7 @@ const styles = StyleSheet.create({
   textArea: { height: 100, textAlignVertical: 'top' },
   saveButton: {
     backgroundColor: '#03DAC6',
-    padding: 16,
+    padding: 16, 
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 32
@@ -276,5 +337,25 @@ const styles = StyleSheet.create({
     color: '#CF6679',
     marginLeft: 8,
     flex: 1
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  timeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#1E1E1E',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#333'
+  },
+  timeButtonText: {
+    color: '#fff',
+    marginLeft: 8,
+    fontSize: 16
   }
 });
