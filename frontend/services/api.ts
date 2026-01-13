@@ -14,7 +14,7 @@ export const api = {
     }
   },
 
-  getAllSubstances: async (limit: number = 100): Promise<Substance[]> => {
+  getAllSubstances: async (limit: number = 1000): Promise<Substance[]> => {
     try {
         const response = await fetch(`${BASE_URL}/api/substances?limit=${limit}`);
         if (!response.ok) throw new Error('Network response was not ok');
