@@ -78,7 +78,7 @@ export default function WikiScreen() {
         <Ionicons name="search" size={20} color={theme.textSecondary} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search substances..."
+          placeholder="Search substances on Eiriel Wiki..."
           placeholderTextColor={theme.placeholder}
           value={query}
           onChangeText={setQuery}
