@@ -38,7 +38,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="wiki"
         options={{
-          title: 'Wiki',
+          title: 'Eiriel Wiki',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="book" size={size} color={color} />
           ),

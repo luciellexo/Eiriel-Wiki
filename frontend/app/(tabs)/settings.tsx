@@ -123,7 +123,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Harm Reduction Resources</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Unaffiliated Harm Reduction Resources</Text>
           <TouchableOpacity style={[styles.linkButton, { borderColor: theme.border }]} onPress={() => openLink('https://psychonautwiki.org/')}>
              <Text style={[styles.linkText, { color: theme.accent }]}>PsychonautWiki</Text>
              <Ionicons name="open-outline" size={16} color={theme.accent} />
@@ -132,15 +132,23 @@ export default function SettingsScreen() {
              <Text style={[styles.linkText, { color: theme.accent }]}>TripSit</Text>
              <Ionicons name="open-outline" size={16} color={theme.accent} />
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.linkButton, { borderColor: theme.border }]} onPress={() => openLink('https://salvum.love/')}>
+             <Text style={[styles.linkText, { color: theme.accent }]}>Salvum Mobile</Text>
+             <Ionicons name="open-outline" size={16} color={theme.accent} />
+          </TouchableOpacity>
           <TouchableOpacity style={[styles.linkButton, { borderColor: theme.border }]} onPress={() => openLink('https://dancesafe.org/')}>
              <Text style={[styles.linkText, { color: theme.accent }]}>DanceSafe</Text>
+             <Ionicons name="open-outline" size={16} color={theme.accent} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.linkButton, { borderColor: theme.border }]} onPress={() => openLink('https://addysafe.org/')}>
+             <Text style={[styles.linkText, { color: theme.accent }]}>AddySafe</Text>
              <Ionicons name="open-outline" size={16} color={theme.accent} />
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
            <Text style={[styles.disclaimer, { color: theme.textSecondary }]}>
-              Disclaimer: This app is for harm reduction and educational purposes only. It does not encourage illegal activity. Always research before use.
+           Disclaimer: This app is for harm reduction and educational purposes only. It does not encourage illegal activity. Always research before use. All Data Stored Locally.  Developers - lucielle6576 Eiriel Harm Reduction © 2026
            </Text>
            <Text style={[styles.version, { color: theme.textSecondary }]}>v1.1.0</Text>
         </View>
